@@ -3,7 +3,7 @@
   "nodes": [
     {
       "parameters": {},
-      "id": "e5227cf2-27a5-43ca-b48a-7fab9180227c",
+      "id": "dc882d96-6888-4a6e-8388-d46a7c42f9e8",
       "name": "Quando um workflow falhar",
       "type": "n8n-nodes-base.errorTrigger",
       "typeVersion": 1,
@@ -16,7 +16,7 @@
       "parameters": {
         "jsCode": "const e = $json;\nreturn [{\n  json: {\n    workflow: e.workflow?.name ?? 'desconhecido',\n    mensagem: e.execution?.error?.message ?? 'sem mensagem',\n    no: e.execution?.lastNodeExecuted ?? '-',\n    quando: new Date().toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' }),\n    url: e.execution?.url ?? '',\n  },\n}];"
       },
-      "id": "7a18d1db-c449-4a9b-9665-6d10904e2c7b",
+      "id": "c78be7f8-6a96-4b06-a5ee-064b437dc46e",
       "name": "Montar aviso",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -34,7 +34,7 @@
         "html": "=<div style=\"font-family: -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #171a20; line-height: 1.6;\">\n      <p><strong>Um cliente pode não ter recebido a confirmação.</strong></p>\n      <p>Workflow: {{ $json.workflow }}<br>\n         No: {{ $json.no }}<br>\n         Erro: {{ $json.mensagem }}<br>\n         Quando: {{ $json.quando }}</p>\n      <p>O agendamento está salvo no sistema — só o e-mail não saiu.</p>\n    </div>",
         "options": {}
       },
-      "id": "a9409588-b15a-45c8-b24c-4a1d43569b0a",
+      "id": "525dcc1d-457b-4801-89f8-fd8220c5cbd7",
       "name": "Avisar o Marcelo",
       "type": "n8n-nodes-base.emailSend",
       "typeVersion": 2.1,
@@ -56,8 +56,8 @@
         "width": 420,
         "color": 3
       },
-      "id": "a2977a38-eea3-40d4-83de-c97e1d8dec26",
-      "name": "Nota b5b2",
+      "id": "080b7d80-e7d8-4e62-a2d4-4a81866808e6",
+      "name": "Nota 5f1a",
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
       "position": [

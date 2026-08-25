@@ -17,7 +17,7 @@ async function start() {
     console.log(`  http://localhost:${env.port}`);
     console.log(`  fuso: ${env.timezone}`);
     console.log(
-      `  n8n: ${env.n8n.webhookUrl ? 'configurado' : 'não configurado (disparos so no log)'}\n`
+      `  n8n: ${env.n8n.webhookUrl ? 'configurado' : 'não configurado (disparos só no log)'}\n`
     );
   });
 
