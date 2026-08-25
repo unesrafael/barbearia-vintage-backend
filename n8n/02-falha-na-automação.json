@@ -1,0 +1,101 @@
+{
+  "name": "Barbearia Vintage — Falha na automação",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "e5227cf2-27a5-43ca-b48a-7fab9180227c",
+      "name": "Quando um workflow falhar",
+      "type": "n8n-nodes-base.errorTrigger",
+      "typeVersion": 1,
+      "position": [
+        -40,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const e = $json;\nreturn [{\n  json: {\n    workflow: e.workflow?.name ?? 'desconhecido',\n    mensagem: e.execution?.error?.message ?? 'sem mensagem',\n    no: e.execution?.lastNodeExecuted ?? '-',\n    quando: new Date().toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' }),\n    url: e.execution?.url ?? '',\n  },\n}];"
+      },
+      "id": "7a18d1db-c449-4a9b-9665-6d10904e2c7b",
+      "name": "Montar aviso",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        200,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "fromEmail": "contato@barbeariavintage.com",
+        "toEmail": "marcelo@barbeariavintage.com",
+        "subject": "=[Barbearia Vintage] A automação falhou em {{ $json.no }}",
+        "emailFormat": "html",
+        "html": "=<div style=\"font-family: -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #171a20; line-height: 1.6;\">\n      <p><strong>Um cliente pode não ter recebido a confirmação.</strong></p>\n      <p>Workflow: {{ $json.workflow }}<br>\n         No: {{ $json.no }}<br>\n         Erro: {{ $json.mensagem }}<br>\n         Quando: {{ $json.quando }}</p>\n      <p>O agendamento está salvo no sistema — só o e-mail não saiu.</p>\n    </div>",
+        "options": {}
+      },
+      "id": "a9409588-b15a-45c8-b24c-4a1d43569b0a",
+      "name": "Avisar o Marcelo",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [
+        440,
+        300
+      ],
+      "credentials": {
+        "smtp": {
+          "id": "SUBSTITUA_PELA_SUA_CREDENCIAL",
+          "name": "SMTP Barbearia Vintage"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "## Caminho infeliz\\n\\nEm **Settings > Error Workflow** do workflow principal, aponte para este aqui. Se o SMTP cair, o Marcelo fica sabendo em vez de o cliente simplesmente não receber nada.",
+        "height": 190,
+        "width": 420,
+        "color": 3
+      },
+      "id": "a2977a38-eea3-40d4-83de-c97e1d8dec26",
+      "name": "Nota b5b2",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -80,
+        60
+      ]
+    }
+  ],
+  "connections": {
+    "Quando um workflow falhar": {
+      "main": [
+        [
+          {
+            "node": "Montar aviso",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Montar aviso": {
+      "main": [
+        [
+          {
+            "node": "Avisar o Marcelo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "pinData": {},
+  "meta": {
+    "instanceId": "barbearia-vintage"
+  },
+  "tags": []
+}

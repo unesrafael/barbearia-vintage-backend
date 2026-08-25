@@ -1,0 +1,294 @@
+{
+  "name": "Barbearia Vintage — Agendamento criado",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "agendamento-criado",
+        "responseMode": "onReceived",
+        "options": {}
+      },
+      "id": "cfff1ba1-1919-4206-b5f4-8efb8d049702",
+      "name": "Webhook: agendamento criado",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        -160,
+        300
+      ],
+      "webhookId": "a5ea6835-5ecd-4429-9047-0e26287eb58a"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "a41a4cf7-3a9b-4684-b9ab-175a2e85816c",
+              "leftValue": "={{ $json.headers['x-webhook-secret'] }}",
+              "rightValue": "TROQUE-ESTE-SEGREDO",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "id": "04010b0b-d95c-4486-a91c-ec5385c1c1e2",
+      "name": "Segredo confere?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        80,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "/**\n * \"A automação devera analisar suas informações e enviar um e-mail ao cliente.\"\n *\n * Este no faz a parte de analisar: normaliza o payload, converte o horário\n * para linguagem de gente, calcula o preço e decide o tom da mensagem.\n * O banco guarda em UTC; a API já mandou date/time no fuso da barbearia.\n */\nconst payload = $json.body ?? $json;\n\nconst { appointment, client, service, analysis, business } = payload;\n\nconst primeiroNome = client.name.trim().split(' ')[0];\n\n// \"2026-08-27\" -> \"27/08\"\nconst [ano, mes, dia] = appointment.date.split('-');\nconst dataCurta = `${dia}/${mes}`;\n\n// \"14:30\" -> \"14h30\"\nconst horaFalada = appointment.time.replace(':', 'h');\n\n// \"quinta-feira\" -> \"qui\"\nconst diaCurto = appointment.weekday.replace('-feira', '').slice(0, 3);\n\nconst quando = `${appointment.weekday}, ${appointment.dateLong}, às ${horaFalada}`;\n\n// Antecedencia: define se ainda faz sentido falar em \"amanha\" ou \"hoje\".\nconst horas = analysis.hoursUntilAppointment;\nlet antecedencia = '';\nif (horas < 0) antecedencia = 'registrado';\nelse if (horas < 12) antecedencia = 'ainda hoje';\nelse if (horas < 36) antecedencia = 'amanha';\nelse antecedencia = `em ${Math.round(horas / 24)} dias`;\n\nconst assunto = analysis.isFirstVisit\n  ? `${primeiroNome}, seu primeiro horário na ${business.name} está marcado — ${diaCurto} ${dataCurta} às ${horaFalada}`\n  : `Horário confirmado na ${business.name} — ${diaCurto} ${dataCurta} às ${horaFalada}`;\n\nreturn [{\n  json: {\n    ...payload,\n    computed: {\n      primeiroNome,\n      quando,\n      dataCurta,\n      horaFalada,\n      diaCurto,\n      antecedencia,\n      assunto,\n      preço: service.priceFormatted,\n      duração: `${service.durationMin} minutos`,\n      isFirstVisit: analysis.isFirstVisit,\n    },\n  },\n}];"
+      },
+      "id": "3db91629-9ff1-4d47-b441-b1a8bcd5b8f7",
+      "name": "Analisar agendamento",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        320,
+        200
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "7c32a25b-79f9-43b3-a562-40aaeb0e7d9b",
+      "name": "Recusar chamada",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        320,
+        420
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "f993eec4-9914-4f2c-adc6-cb860d587fc7",
+              "leftValue": "={{ $json.computed.isFirstVisit }}",
+              "rightValue": "true",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "id": "355ea4a8-161c-46aa-9a9d-358581bfaf67",
+      "name": "Cliente novo?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        560,
+        200
+      ]
+    },
+    {
+      "parameters": {
+        "fromEmail": "contato@barbeariavintage.com",
+        "toEmail": "={{ $json.client.email }}",
+        "subject": "={{ $json.computed.assunto }}",
+        "emailFormat": "html",
+        "html": "=<div style=\"font-family: -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #171a20; line-height: 1.6; max-width:520px; margin:0 auto; padding:8px;\">\n      <div style=\"height:5px; background:repeating-linear-gradient(115deg,#af1229 0 12px,#eef0f4 12px 24px,#27486f 24px 36px,#eef0f4 36px 48px); border-radius:99px;\"></div>\n      <h1 style=\"font-size:22px; margin:24px 0 4px;\">Boas-vindas, {{ $json.computed.primeiroNome }}!</h1>\n      <p style=\"margin:0; color:#5b6270;\">Este é o seu primeiro horário com a gente — já está reservado.</p>\n\n      <table role=\"presentation\" cellpadding=\"0\" cellspacing=\"0\" style=\"width:100%; border-collapse:collapse; margin:22px 0; border:1px solid #dcdfe6; border-radius:8px; overflow:hidden;\">\n        <tr><td style=\"padding:11px 16px; background:#f4f5f7; font-size:12px; letter-spacing:.08em; text-transform:uppercase; color:#5b6270;\">Seu atendimento</td></tr>\n        <tr><td style=\"padding:14px 16px; border-top:1px solid #e8eaef;\"><strong>Serviço</strong><br>{{ $json.service.name }} &middot; {{ $json.computed.duração }}</td></tr>\n        <tr><td style=\"padding:14px 16px; border-top:1px solid #e8eaef;\"><strong>Quando</strong><br>{{ $json.computed.quando }}</td></tr>\n        <tr><td style=\"padding:14px 16px; border-top:1px solid #e8eaef;\"><strong>Valor</strong><br>{{ $json.computed.preço }}</td></tr>\n        <tr><td style=\"padding:14px 16px; border-top:1px solid #e8eaef;\"><strong>Onde</strong><br>{{ $json.business.address }}</td></tr>\n      </table>\n      <p style=\"margin:0 0 8px;\"><strong>Para a sua primeira visita:</strong> chegue uns 5 minutinhos antes. Se precisar remarcar, é só chamar no WhatsApp {{ $json.business.whatsapp }}.</p>\n      <p style=\"margin:22px 0 0; color:#868d9b; font-size:13px;\">{{ $json.business.name }} &middot; {{ $json.business.address }}</p>\n    </div>",
+        "options": {}
+      },
+      "id": "3c0fa859-b9e7-4fe3-8f42-894783e735bb",
+      "name": "E-mail de boas-vindas",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [
+        800,
+        100
+      ],
+      "credentials": {
+        "smtp": {
+          "id": "SUBSTITUA_PELA_SUA_CREDENCIAL",
+          "name": "SMTP Barbearia Vintage"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "fromEmail": "contato@barbeariavintage.com",
+        "toEmail": "={{ $json.client.email }}",
+        "subject": "={{ $json.computed.assunto }}",
+        "emailFormat": "html",
+        "html": "=<div style=\"font-family: -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #171a20; line-height: 1.6; max-width:520px; margin:0 auto; padding:8px;\">\n      <div style=\"height:5px; background:repeating-linear-gradient(115deg,#af1229 0 12px,#eef0f4 12px 24px,#27486f 24px 36px,#eef0f4 36px 48px); border-radius:99px;\"></div>\n      <h1 style=\"font-size:22px; margin:24px 0 4px;\">Horário confirmado, {{ $json.computed.primeiroNome }}</h1>\n      <p style=\"margin:0; color:#5b6270;\">Seu atendimento é {{ $json.computed.antecedencia }}. Te esperamos.</p>\n\n      <table role=\"presentation\" cellpadding=\"0\" cellspacing=\"0\" style=\"width:100%; border-collapse:collapse; margin:22px 0; border:1px solid #dcdfe6; border-radius:8px; overflow:hidden;\">\n        <tr><td style=\"padding:11px 16px; background:#f4f5f7; font-size:12px; letter-spacing:.08em; text-transform:uppercase; color:#5b6270;\">Seu atendimento</td></tr>\n        <tr><td style=\"padding:14px 16px; border-top:1px solid #e8eaef;\"><strong>Serviço</strong><br>{{ $json.service.name }} &middot; {{ $json.computed.duração }}</td></tr>\n        <tr><td style=\"padding:14px 16px; border-top:1px solid #e8eaef;\"><strong>Quando</strong><br>{{ $json.computed.quando }}</td></tr>\n        <tr><td style=\"padding:14px 16px; border-top:1px solid #e8eaef;\"><strong>Valor</strong><br>{{ $json.computed.preço }}</td></tr>\n        <tr><td style=\"padding:14px 16px; border-top:1px solid #e8eaef;\"><strong>Onde</strong><br>{{ $json.business.address }}</td></tr>\n      </table>\n      <p style=\"margin:0 0 8px;\">Precisa remarcar ou cancelar? Chame no WhatsApp {{ $json.business.whatsapp }} que a gente ajusta.</p>\n      <p style=\"margin:22px 0 0; color:#868d9b; font-size:13px;\">{{ $json.business.name }} &middot; {{ $json.business.address }}</p>\n    </div>",
+        "options": {}
+      },
+      "id": "8355bdf4-8dac-4176-8b13-323ba435b6e7",
+      "name": "E-mail de confirmação",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [
+        800,
+        320
+      ],
+      "credentials": {
+        "smtp": {
+          "id": "SUBSTITUA_PELA_SUA_CREDENCIAL",
+          "name": "SMTP Barbearia Vintage"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "## 1. Entrada\\n\\nA API chama este webhook depois de gravar o agendamento **e já ter respondido ao usuário**. Se este workflow estiver fora do ar, o agendamento continua válido.\\n\\n`POST /webhook/agendamento-criado`",
+        "height": 200,
+        "width": 280,
+        "color": 4
+      },
+      "id": "4c786998-5517-474a-9736-86ca894afd6b",
+      "name": "Nota 513b",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        -200,
+        60
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## 2. Segurança\\n\\nTroque `TROQUE-ESTE-SEGREDO` pelo mesmo valor de `N8N_WEBHOOK_SECRET` no `.env` do backend. Sem isso o webhook fica aberto para qualquer um na internet.",
+        "height": 200,
+        "width": 230,
+        "color": 3
+      },
+      "id": "cb417796-e496-41f6-8bf4-c4b8e343c997",
+      "name": "Nota d9c2",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        60,
+        60
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## 3. Analisar\\n\\nNormaliza o payload e monta data por extenso, preço em reais, antecedência e assunto do e-mail.",
+        "height": 190,
+        "width": 220,
+        "color": 5
+      },
+      "id": "e5d23ab9-716e-43b6-98f8-72c64703f558",
+      "name": "Nota d56b",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        310,
+        -20
+      ]
+    },
+    {
+      "parameters": {
+        "content": "## 4. Decidir\\n\\nCliente novo recebe boas-vindas com endereço e orientação; cliente recorrente recebe a confirmação curta. É a ramificação que transforma \"enviar um e-mail\" em \"analisar e enviar\".",
+        "height": 190,
+        "width": 220,
+        "color": 6
+      },
+      "id": "dbcae352-238d-45be-806c-eb0e77e33d8f",
+      "name": "Nota 7a4a",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        550,
+        -20
+      ]
+    }
+  ],
+  "connections": {
+    "Webhook: agendamento criado": {
+      "main": [
+        [
+          {
+            "node": "Segredo confere?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Segredo confere?": {
+      "main": [
+        [
+          {
+            "node": "Analisar agendamento",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Recusar chamada",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Analisar agendamento": {
+      "main": [
+        [
+          {
+            "node": "Cliente novo?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Cliente novo?": {
+      "main": [
+        [
+          {
+            "node": "E-mail de boas-vindas",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "E-mail de confirmação",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "pinData": {},
+  "meta": {
+    "instanceId": "barbearia-vintage"
+  },
+  "tags": []
+}
