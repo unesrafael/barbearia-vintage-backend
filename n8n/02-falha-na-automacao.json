@@ -1,9 +1,9 @@
 {
-  "name": "Barbearia Vintage — Falha na automacao",
+  "name": "Barbearia Vintage — Falha na automação",
   "nodes": [
     {
       "parameters": {},
-      "id": "c2730385-426b-4c0e-bdcd-f3af9d0b96b7",
+      "id": "5e89b1e6-bb42-4825-a913-a9e5ed42d528",
       "name": "Quando um workflow falhar",
       "type": "n8n-nodes-base.errorTrigger",
       "typeVersion": 1,
@@ -16,7 +16,7 @@
       "parameters": {
         "jsCode": "const e = $json;\nreturn [{\n  json: {\n    workflow: e.workflow?.name ?? 'desconhecido',\n    mensagem: e.execution?.error?.message ?? 'sem mensagem',\n    no: e.execution?.lastNodeExecuted ?? '-',\n    quando: new Date().toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' }),\n    url: e.execution?.url ?? '',\n  },\n}];"
       },
-      "id": "0ac3eab2-86d6-4ee3-9023-97042f23d1fc",
+      "id": "d2fa1999-6685-4d28-986d-cd5dd27e54cd",
       "name": "Montar aviso",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -29,12 +29,12 @@
       "parameters": {
         "fromEmail": "contato@barbeariavintage.com",
         "toEmail": "marcelo@barbeariavintage.com",
-        "subject": "=[Barbearia Vintage] A automacao falhou em {{ $json.no }}",
+        "subject": "=[Barbearia Vintage] A automação falhou em {{ $json.no }}",
         "emailFormat": "html",
-        "html": "=<div style=\"font-family: -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #171a20; line-height: 1.6;\">\n      <p><strong>Um cliente pode nao ter recebido a confirmacao.</strong></p>\n      <p>Workflow: {{ $json.workflow }}<br>\n         No: {{ $json.no }}<br>\n         Erro: {{ $json.mensagem }}<br>\n         Quando: {{ $json.quando }}</p>\n      <p>O agendamento esta salvo no sistema — so o e-mail nao saiu.</p>\n    </div>",
+        "html": "=<div style=\"font-family: -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #171a20; line-height: 1.6;\">\n      <p><strong>Um cliente pode não ter recebido a confirmação.</strong></p>\n      <p>Workflow: {{ $json.workflow }}<br>\n         No: {{ $json.no }}<br>\n         Erro: {{ $json.mensagem }}<br>\n         Quando: {{ $json.quando }}</p>\n      <p>O agendamento está salvo no sistema — só o e-mail não saiu.</p>\n    </div>",
         "options": {}
       },
-      "id": "1b0b8c34-e2a7-4824-b1da-8fe1b219713b",
+      "id": "bbd36c00-eafa-4266-b1e4-41043db924c6",
       "name": "Avisar o Marcelo",
       "type": "n8n-nodes-base.emailSend",
       "typeVersion": 2.1,
@@ -51,13 +51,13 @@
     },
     {
       "parameters": {
-        "content": "## Caminho infeliz\\n\\nEm **Settings > Error Workflow** do workflow principal, aponte para este aqui. Se o SMTP cair, o Marcelo fica sabendo em vez de o cliente simplesmente nao receber nada.",
+        "content": "## Caminho infeliz\\n\\nEm **Settings > Error Workflow** do workflow principal, aponte para este aqui. Se o SMTP cair, o Marcelo fica sabendo em vez de o cliente simplesmente não receber nada.",
         "height": 190,
         "width": 420,
         "color": 3
       },
-      "id": "b99ef671-71ff-4427-834a-8a5b15a270a0",
-      "name": "Nota 4ed9",
+      "id": "add724c4-a5a8-4a66-9471-0ece09cca93d",
+      "name": "Nota 8b35",
       "type": "n8n-nodes-base.stickyNote",
       "typeVersion": 1,
       "position": [
