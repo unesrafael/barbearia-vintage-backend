@@ -1,0 +1,199 @@
+### Barbearia Vintage — coleção de requisições
+### Use a extensão "REST Client" do VS Code, ou copie os valores para o Insomnia.
+### Rode de cima para baixo: as variáveis vão sendo preenchidas pelas respostas.
+
+@host = http://localhost:3333
+
+### Status da API (única rota sem token)
+GET {{host}}/health
+
+### Login — guarda o token para as próximas requisições
+# @name login
+POST {{host}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "marcelo@barbeariavintage.com",
+  "password": "vintage123"
+}
+
+@token = {{login.response.body.token}}
+
+### Senha errada — deve devolver 401 sem dizer se o e-mail existe
+POST {{host}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "marcelo@barbeariavintage.com",
+  "password": "errada"
+}
+
+### Rota protegida sem token — deve devolver 401
+GET {{host}}/clients
+
+### Confirmar a sessão
+GET {{host}}/auth/me
+Authorization: Bearer {{token}}
+
+
+### ─────────────────────────────  CLIENTES  ─────────────────────────────
+
+### Listar
+# @name clientes
+GET {{host}}/clients
+Authorization: Bearer {{token}}
+
+@clientId = {{clientes.response.body.0.id}}
+
+### Buscar por nome, e-mail ou telefone
+GET {{host}}/clients?q=ricardo
+Authorization: Bearer {{token}}
+
+### Ficha completa com histórico de atendimentos
+GET {{host}}/clients/{{clientId}}
+Authorization: Bearer {{token}}
+
+### Cadastrar
+POST {{host}}/clients
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "name": "Otávio Prado",
+  "email": "otavio.prado@exemplo.com",
+  "phone": "(11) 98888-7777",
+  "notes": "Prefere atendimento no fim da tarde."
+}
+
+### E-mail inválido — deve devolver 422 com o campo apontado
+POST {{host}}/clients
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "name": "Teste",
+  "email": "não-é-email"
+}
+
+### Editar
+PUT {{host}}/clients/{{clientId}}
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "name": "João Pedro Silva",
+  "email": "joao.silva@exemplo.com",
+  "phone": "(11) 98811-2233",
+  "notes": "Prefere máquina 2 nas laterais."
+}
+
+
+### ─────────────────────────────  SERVIÇOS  ─────────────────────────────
+
+### Listar ativos
+# @name servicos
+GET {{host}}/services
+Authorization: Bearer {{token}}
+
+@serviceId = {{servicos.response.body.0.id}}
+
+### Listar todos, inclusive desativados
+GET {{host}}/services?includeInactive=true
+Authorization: Bearer {{token}}
+
+### Cadastrar
+POST {{host}}/services
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "name": "Hidratação capilar",
+  "durationMin": 45,
+  "priceCents": 6000
+}
+
+
+### ───────────────────────────  AGENDAMENTOS  ───────────────────────────
+
+### Agenda de um dia (ordenada por horário)
+GET {{host}}/appointments?date=2026-08-25
+Authorization: Bearer {{token}}
+
+### Agenda de um intervalo, só o que ainda está marcado
+GET {{host}}/appointments?from=2026-08-24&to=2026-08-31&status=AGENDADO
+Authorization: Bearer {{token}}
+
+### Criar — dispara a automação do n8n
+# @name novoAgendamento
+POST {{host}}/appointments
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "clientId": "{{clientId}}",
+  "serviceId": "{{serviceId}}",
+  "date": "2026-09-10",
+  "time": "15:00",
+  "notes": "Cliente pediu para avisar se abrir horário mais cedo."
+}
+
+@appointmentId = {{novoAgendamento.response.body.id}}
+
+### Mesmo horário de novo — deve devolver 409 HORARIO_OCUPADO
+POST {{host}}/appointments
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "clientId": "{{clientId}}",
+  "serviceId": "{{serviceId}}",
+  "date": "2026-09-10",
+  "time": "15:00"
+}
+
+### Detalhe
+GET {{host}}/appointments/{{appointmentId}}
+Authorization: Bearer {{token}}
+
+### Trocar só o status (o que a agenda faz em um clique)
+PATCH {{host}}/appointments/{{appointmentId}}/status
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "status": "CONCLUIDO"
+}
+
+### Cancelar — libera o horário para outro agendamento
+PATCH {{host}}/appointments/{{appointmentId}}/status
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "status": "CANCELADO"
+}
+
+### Editar data, horário, serviço ou cliente
+PUT {{host}}/appointments/{{appointmentId}}
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "clientId": "{{clientId}}",
+  "serviceId": "{{serviceId}}",
+  "date": "2026-09-11",
+  "time": "16:30",
+  "notes": "Remarcado a pedido do cliente.",
+  "status": "AGENDADO"
+}
+
+### Remover
+DELETE {{host}}/appointments/{{appointmentId}}
+Authorization: Bearer {{token}}
+
+
+### ─────────────────────────────  RESUMO  ─────────────────────────────
+
+### Totais por status, faturamento e ranking de serviços
+GET {{host}}/appointments/summary?from=2026-08-19&to=2026-08-25
+Authorization: Bearer {{token}}
